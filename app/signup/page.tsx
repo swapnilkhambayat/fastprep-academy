@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
+import { createClient } from 'app/lib/supabase/client';
 
 export default function SignupPage() {
     const [formData, setFormData] = useState({
@@ -22,12 +23,33 @@ export default function SignupPage() {
         });
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // TODO: Connect to Supabase Auth + insert into profiles table
-        console.log('Signup data:', formData);
-        // Later: signUp with Supabase, then upsert profile data
-    };
+        const supabase = createClient();
+
+        const { data, error } = await supabase.auth.signUp({
+            email: formData.email || '',
+            password: formData.password,
+            options: {
+                data: {
+                    parent_name: formData.parentName,
+                    student_name: formData.studentName,
+                    grade: parseInt(formData.grade),
+                    school: formData.school || null,
+                    username: formData.username,
+                },
+            },
+        });
+
+        if (error) {
+            alert(' Signup Error: ' + error.message);
+            console.error(error);
+        } else {
+                alert('Success! Check your email to confirm.');
+                // Redirect or go to login
+                window.location.href = '/login';
+            }
+        };
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center px-6 py-12">
@@ -137,7 +159,7 @@ export default function SignupPage() {
                                 required
                                 value={formData.username}
                                 onChange={handleChange}
-                                className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                                className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
                                 placeholder="jane123"
                             />
                         </div>
