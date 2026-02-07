@@ -4,21 +4,23 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 // Note: Install icons with: npm install lucide-react
-import { 
-  CheckCircle, 
-  Search, 
-  Target, 
-  ChevronRight, 
-  Info, 
-  TrendingUp, 
-  Clock, 
-  Calculator, 
+import {
+  CheckCircle,
+  Search,
+  Target,
+  ChevronRight,
+  Info,
+  TrendingUp,
+  Clock,
+  Calculator,
   Monitor,
   GraduationCap
 } from 'lucide-react';
 
 export default function Home() {
   const [searchGrade, setSearchGrade] = useState('');
+  const [calcGrade, setCalcGrade] = useState('Grade 3 ELA Reading');
+  const [userScore, setUserScore] = useState<number | ''>('');
 
   // Official 2025-26 Scale Score Data
   const scoreData = [
@@ -38,9 +40,29 @@ export default function Home() {
     { assessment: "Grade 8 Mathematics", l1: "183-226", l2: "227-243", l3: "244-253", l4: "254-262", l5: "263-291" },
   ];
 
-  const filteredScores = scoreData.filter(s => 
-    s.assessment.toLowerCase().includes(searchGrade.toLowerCase())
-  );
+  // Function to find the level based on score
+  const calculateLevel = () => {
+    if (userScore === '') return null;
+    const gradeData = scoreData.find(s => s.assessment === calcGrade);
+    if (!gradeData) return null;
+
+    const score = Number(userScore);
+
+    const getRange = (rangeStr: string) => {
+      const [min, max] = rangeStr.split('-').map(Number);
+      return { min, max };
+    };
+
+    if (score >= getRange(gradeData.l1).min && score <= getRange(gradeData.l1).max) return { lv: 1, label: "Inadequate", color: "bg-red-500" };
+    if (score >= getRange(gradeData.l2).min && score <= getRange(gradeData.l2).max) return { lv: 2, label: "Below Grade", color: "bg-orange-500" };
+    if (score >= getRange(gradeData.l3).min && score <= getRange(gradeData.l3).max) return { lv: 3, label: "On Grade Level", color: "bg-green-500" };
+    if (score >= getRange(gradeData.l4).min && score <= getRange(gradeData.l4).max) return { lv: 4, label: "Proficient", color: "bg-blue-500" };
+    if (score >= getRange(gradeData.l5).min && score <= getRange(gradeData.l5).max) return { lv: 5, label: "Exemplary", color: "bg-purple-500" };
+
+    return { lv: '?', label: "Outside Known Range", color: "bg-gray-400" };
+  };
+
+  const result = calculateLevel();
 
   return (
     <>
@@ -67,7 +89,7 @@ export default function Home() {
                 </Link>
                 {/* Fixed "Check Score Ranges" Link */}
                 <Link
-                  href="#scores"
+                  href="#score-utility"
                   className="px-8 py-4 bg-white text-blue-600 font-semibold rounded-lg shadow-md border border-blue-600 hover:bg-blue-50 transition"
                 >
                   Check Score Ranges
@@ -94,94 +116,133 @@ export default function Home() {
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-bold mb-4">Achievement Level Dashboard</h2>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-              Level 3 indicates <strong>On Grade Level</strong> performance. PM3 results determine critical promotion and graduation milestones.
+              Florida FAST results are reported on a scale of 1–5. Level 3 indicates **On Grade Level** performance, while PM3 results determine critical promotion milestones.
             </p>
           </div>
-          
-          <div className="grid md:grid-cols-5 gap-4 mb-12">
+
+          {/* Visual Speedometer / Progress Track */}
+          <div className="relative mb-12 px-4">
+            <div className="h-4 w-full bg-gray-800 rounded-full flex overflow-hidden border border-white/10">
+              <div className="w-1/5 bg-red-500 h-full border-r border-gray-900/50"></div>
+              <div className="w-1/5 bg-orange-500 h-full border-r border-gray-900/50"></div>
+              <div className="w-1/5 bg-green-500 h-full border-r border-gray-900/50"></div>
+              <div className="w-1/5 bg-blue-500 h-full border-r border-gray-900/50"></div>
+              <div className="w-1/5 bg-purple-500 h-full"></div>
+            </div>
+            <div className="flex justify-between mt-2 text-[10px] font-bold uppercase tracking-tighter text-gray-500">
+              <span>Level 1</span>
+              <span>Level 2</span>
+              <span>Level 3</span>
+              <span>Level 4</span>
+              <span>Level 5</span>
+            </div>
+          </div>
+
+          {/* Colored Cards Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-12">
             {[
-              { lv: 1, color: "bg-red-500", label: "Inadequate" },
-              { lv: 2, color: "bg-orange-500", label: "Below Grade" },
-              { lv: 3, color: "bg-green-500", label: "On Grade Level" },
-              { lv: 4, color: "bg-blue-500", label: "Proficient" },
-              { lv: 5, color: "bg-purple-500", label: "Exemplary" }
+              { lv: 1, color: "bg-red-500", border: "border-red-500/50", label: "Inadequate", desc: "Highly Likely to Need Support" },
+              { lv: 2, color: "bg-orange-500", border: "border-orange-500/50", label: "Below Grade", desc: "Likely to Need Support" },
+              { lv: 3, color: "bg-green-500", border: "border-green-500/50", label: "On Grade Level", desc: "May Need Support" },
+              { lv: 4, color: "bg-blue-500", border: "border-blue-500/50", label: "Proficient", desc: "Likely to Excel" },
+              { lv: 5, color: "bg-purple-500", border: "border-purple-500/50", label: "Exemplary", desc: "Highly Likely to Excel" }
             ].map((item) => (
-              <div key={item.lv} className="bg-white/5 border border-white/10 p-6 rounded-2xl text-center">
-                <div className={`${item.color} w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center font-black text-xl shadow-lg`}>{item.lv}</div>
-                <h4 className="font-bold text-sm">{item.label}</h4>
+              <div key={item.lv} className={`relative group overflow-hidden bg-white/5 border ${item.border} p-6 rounded-2xl text-center transition-all duration-300 hover:bg-white/10`}>
+                {/* Subtle Glow Effect */}
+                <div className={`absolute -top-10 -right-10 w-20 h-20 ${item.color} opacity-10 blur-3xl rounded-full`}></div>
+
+                <div className={`${item.color} w-14 h-14 rounded-full mx-auto mb-4 flex items-center justify-center font-black text-2xl shadow-lg ring-4 ring-gray-900`}>
+                  {item.lv}
+                </div>
+                <h4 className="font-bold text-sm mb-1">{item.label}</h4>
+                <p className="text-[10px] text-gray-400 leading-tight uppercase font-medium">{item.desc}</p>
               </div>
             ))}
           </div>
 
+          {/* Critical Milestones */}
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="p-6 bg-red-600/20 border border-red-500/30 rounded-2xl flex gap-4">
-              <CheckCircle className="text-red-400 shrink-0" size={32} />
+            <div className="p-6 bg-red-600/10 border border-red-500/20 rounded-2xl flex gap-4 hover:bg-red-600/20 transition-colors">
+              <div className="bg-red-500/20 p-3 rounded-lg h-fit">
+                <CheckCircle className="text-red-400 shrink-0" size={24} />
+              </div>
               <div>
                 <h5 className="font-bold text-red-300 mb-1">Grade 3 Promotion</h5>
-                <p className="text-sm text-gray-300">Level 2 or higher on PM3 ELA Reading is required for promotion to Grade 4.</p>
+                <p className="text-sm text-gray-300 leading-relaxed">Level 2 or higher on PM3 ELA Reading is required for promotion to Grade 4.</p>
               </div>
             </div>
-            <div className="p-6 bg-blue-600/20 border border-blue-500/30 rounded-2xl flex gap-4">
-              <GraduationCap className="text-blue-400 shrink-0" size={32} />
+            <div className="p-6 bg-blue-600/10 border border-blue-500/20 rounded-2xl flex gap-4 hover:bg-blue-600/20 transition-colors">
+              <div className="bg-blue-500/20 p-3 rounded-lg h-fit">
+                <GraduationCap className="text-blue-400 shrink-0" size={24} />
+              </div>
               <div>
                 <h5 className="font-bold text-blue-300 mb-1">Grade 10 Graduation</h5>
-                <p className="text-sm text-gray-300">Passing PM3 of Grade 10 FAST ELA Reading is a graduation requirement.</p>
+                <p className="text-sm text-gray-300 leading-relaxed">Passing PM3 of Grade 10 FAST ELA Reading is a mandatory graduation requirement.</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Grade-Specific Score Lookup Section (This is the anchor target) */}
-      <section id="scores" className="py-20 bg-white">
-        <div className="container mx-auto px-6 max-w-6xl">
-          <div className="bg-gray-50 rounded-3xl p-8 md:p-12 border border-gray-200">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-10">
-              <div>
-                <h2 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                  <Target className="text-blue-600" /> B.E.S.T. Scale Score Lookup
+      {/* Interactive Score Calculator */}
+      <section id="score-utility" className="py-12 bg-white scroll-mt-20">
+        <div className="container mx-auto px-6 max-w-4xl">
+          <div className="bg-blue-600 rounded-3xl p-8 md:p-12 shadow-xl text-white">
+            <div className="flex flex-col md:flex-row gap-10 items-center">
+              <div className="flex-1">
+                <h2 className="text-3xl font-bold mb-4 flex items-center gap-2">
+                  <Calculator /> FAST Score Calculator
                 </h2>
-                <p className="text-gray-600 mt-2">Filter by grade to find your target achievement level ranges.</p>
-              </div>
-              <div className="relative w-full md:w-80">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                <input 
-                  type="text" 
-                  placeholder="e.g. Grade 4 Reading..." 
-                  className="w-full text-gray-500 border border-gray-300 rounded-xl py-3 pl-12 pr-4 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                  onChange={(e) => setSearchGrade(e.target.value)}
-                />
-              </div>
-            </div>
+                <p className="text-blue-100 mb-8">
+                  Enter your child's scale score to instantly see their 2025-26 Achievement Level.
+                </p>
 
-            <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-              <table className="w-full text-left">
-                <thead className="bg-gray-100 text-gray-500 text-[10px] uppercase tracking-widest font-bold">
-                  <tr>
-                    <th className="px-6 py-4">Assessment</th>
-                    <th className="px-4 py-4 text-center">Level 1</th>
-                    <th className="px-4 py-4 text-center">Level 2</th>
-                    <th className="px-4 py-4 text-center bg-blue-600 text-white">Level 3 (Goal)</th>
-                    <th className="px-4 py-4 text-center">Level 4</th>
-                    <th className="px-4 py-4 text-center">Level 5</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredScores.map((row, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50 transition">
-                      <td className="px-6 py-5 font-bold text-gray-800">{row.assessment}</td>
-                      <td className="px-4 py-5 text-center text-gray-500">{row.l1}</td>
-                      <td className="px-4 py-5 text-center text-gray-500">{row.l2}</td>
-                      <td className="px-4 py-5 text-center font-black text-blue-700 bg-blue-50/50">{row.l3}</td>
-                      <td className="px-4 py-5 text-center text-gray-500">{row.l4}</td>
-                      <td className="px-4 py-5 text-center text-gray-500">{row.l5}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="mt-4 text-xs text-gray-500 italic">
-              Data sourced from FDOE 2025-26 FAST Fact Sheet.
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-blue-200">Select Assessment</label>
+                    <select
+                      className="w-full bg-blue-700 border border-blue-500 rounded-xl p-3 outline-none focus:ring-2 focus:ring-white transition"
+                      value={calcGrade}
+                      onChange={(e) => setCalcGrade(e.target.value)}
+                    >
+                      {scoreData.map((s, i) => (
+                        <option key={i} value={s.assessment}>{s.assessment}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-blue-200">Enter Scale Score</label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 215"
+                      className="w-full bg-blue-700 border border-blue-500 rounded-xl p-3 outline-none focus:ring-2 focus:ring-white transition placeholder:text-blue-300"
+                      value={userScore}
+                      onChange={(e) => setUserScore(e.target.value === '' ? '' : Number(e.target.value))}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Results Display */}
+              <div className="w-full md:w-64">
+                <div className="bg-white rounded-2xl p-8 text-center text-gray-900 shadow-2xl min-h-[250px] flex flex-col justify-center items-center">
+                  {result ? (
+                    <>
+                      <div className={`${result.color} text-white w-20 h-20 rounded-full flex items-center justify-center text-4xl font-black mb-4 shadow-lg ring-4 ring-gray-100`}>
+                        {result.lv}
+                      </div>
+                      <h4 className="text-xl font-bold">{result.label}</h4>
+                      <p className="text-gray-500 text-sm mt-2 font-medium uppercase tracking-tight">Level Result</p>
+                    </>
+                  ) : (
+                    <div className="text-gray-400">
+                      <Target size={48} className="mx-auto mb-4 opacity-20" />
+                      <p className="text-sm font-medium">Enter a score to see results</p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>

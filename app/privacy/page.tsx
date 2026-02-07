@@ -85,7 +85,7 @@ export default function PrivacyPolicy() {
                   <h4 className="font-bold text-blue-900 mb-2">COPPA (Children’s Online Privacy Protection)</h4>
                   <p className="text-sm">
                     We do not knowingly collect personal information from children under 13 without verifiable parental or school consent. 
-                    Parents may review or request deletion of their child's data at any time.
+                    Parents may review or request deletion of their childs data at any time.
                   </p>
                 </div>
                 <div className="bg-green-50/50 p-6 rounded-2xl border border-green-100">
