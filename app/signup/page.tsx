@@ -2,10 +2,14 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { createClient } from 'app/lib/supabase/client';
 
 export default function SignupPage() {
+    const [showPassword, setShowPassword] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [errorMsg, setErrorMsg] = useState('');
     const [formData, setFormData] = useState({
         parentName: '',
         studentName: '',
@@ -13,22 +17,21 @@ export default function SignupPage() {
         school: '',
         username: '',
         password: '',
-        email: '', // optional
+        email: '',
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value,
-        });
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsLoading(true);
+        setErrorMsg('');
+        
         const supabase = createClient();
-
-        const { data, error } = await supabase.auth.signUp({
-            email: formData.email || '',
+        const { error } = await supabase.auth.signUp({
+            email: formData.email || `${formData.username}@fastprep.temp`,
             password: formData.password,
             options: {
                 data: {
@@ -42,174 +45,109 @@ export default function SignupPage() {
         });
 
         if (error) {
-            alert(' Signup Error: ' + error.message);
-            console.error(error);
+            setErrorMsg(error.message);
+            setIsLoading(false);
         } else {
-                alert('Success! Check your email to confirm.');
-                // Redirect or go to login
-                window.location.href = '/login';
-            }
-        };
+            window.location.href = '/login?message=Check your email to confirm';
+        }
+    };
+
+    // Shared Tailwind class for inputs to ensure high visibility
+    const inputClasses = "w-full px-4 py-3 rounded-xl border-2 border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all";
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center px-6 py-12">
-            <div className="w-full max-w-lg">
-                {/* Logo */}
-                <div className="text-center mb-10">
-                    <Image
-                        src="/images/fastprep_logo_horizontal.png"
-                        alt="FastPrep Academy Logo"
-                        width={300}
-                        height={100}
-                        priority
-                        className="mx-auto"
-                    />
-                    <h2 className="mt-6 text-3xl font-bold text-gray-900">
-                        Create Your Account
-                    </h2>
-                    <p className="mt-2 text-gray-600">
-                        Start practicing Florida FAST exams today
-                    </p>
+        <div className="min-h-screen bg-slate-100 flex flex-col items-center justify-center px-6 py-12">
+            {/* Back Button with higher contrast */}
+            <Link href="/" className="fixed top-8 left-8 flex items-center gap-2 text-slate-700 hover:text-blue-700 transition font-bold text-sm">
+                <ArrowLeft size={18} /> Back to Home
+            </Link>
+
+            <div className="w-full max-w-2xl">
+                <div className="text-center mb-8">
+                    <Image src="/images/fastprep_logo_horizontal.png" alt="FastPrep Academy" width={220} height={60} priority className="mx-auto" />
+                    <h2 className="mt-6 text-3xl font-black text-slate-900">Create Your Account</h2>
+                    <p className="text-slate-600 font-medium">Join thousands of Florida families today.</p>
                 </div>
 
-                {/* Signup Form */}
-                <div className="bg-white shadow-xl rounded-2xl p-8">
+                <div className="bg-white shadow-2xl rounded-3xl p-8 md:p-10 border border-slate-200">
+                    {errorMsg && (
+                        <div className="mb-6 p-4 bg-red-100 border-2 border-red-200 text-red-700 font-bold rounded-xl text-center">
+                            {errorMsg}
+                        </div>
+                    )}
+
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Parent Name */}
-                        <div>
-                            <label htmlFor="parentName" className="block text-sm font-medium text-gray-700">
-                                Parent/Guardian Name *
-                            </label>
-                            <input
-                                id="parentName"
-                                name="parentName"
-                                type="text"
-                                required
-                                value={formData.parentName}
-                                onChange={handleChange}
-                                className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
-                                placeholder="John Doe"
-                            />
+                        <div className="grid md:grid-cols-2 gap-8">
+                            {/* Parent Info */}
+                            <div className="space-y-4">
+                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">Parent Info</h3>
+                                <div className="space-y-1">
+                                    <label className="text-sm font-bold text-slate-700 ml-1">Full Name</label>
+                                    <input name="parentName" type="text" required placeholder="e.g. Michael Smith" onChange={handleChange} className={inputClasses} />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-sm font-bold text-slate-700 ml-1">Email Address</label>
+                                    <input name="email" type="email" placeholder="parent@example.com" onChange={handleChange} className={inputClasses} />
+                                </div>
+                            </div>
+
+                            {/* Student Info */}
+                            <div className="space-y-4">
+                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">Student Info</h3>
+                                <div className="space-y-1">
+                                    <label className="text-sm font-bold text-slate-700 ml-1">Student Name</label>
+                                    <input name="studentName" type="text" required placeholder="Student's Name" onChange={handleChange} className={inputClasses} />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-sm font-bold text-slate-700 ml-1">Grade Level</label>
+                                    <select name="grade" required onChange={handleChange} className={inputClasses}>
+                                        <option value="">Select Grade</option>
+                                        {[3, 4, 5, 6, 7, 8, 9, 10].map(g => <option key={g} value={g}>Grade {g}</option>)}
+                                    </select>
+                                </div>
+                            </div>
                         </div>
 
-                        {/* Student Name */}
-                        <div>
-                            <label htmlFor="studentName" className="block text-sm font-medium text-gray-700">
-                                Student Name *
-                            </label>
-                            <input
-                                id="studentName"
-                                name="studentName"
-                                type="text"
-                                required
-                                value={formData.studentName}
-                                onChange={handleChange}
-                                className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
-                                placeholder="Jane Doe"
-                            />
-                        </div>
+                        <div className="h-px bg-slate-200 my-4" />
 
-                        {/* Grade */}
-                        <div>
-                            <label htmlFor="grade" className="block text-sm font-medium text-gray-700">
-                                Grade/Standard *
-                            </label>
-                            <select
-                                id="grade"
-                                name="grade"
-                                required
-                                value={formData.grade}
-                                onChange={handleChange}
-                                className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
-                            >
-                                <option value="">Select grade</option>
-                                {[3, 4, 5, 6, 7, 8, 9, 10].map((g) => (
-                                    <option key={g} value={g}>
-                                        Grade {g}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* School (Optional) */}
-                        <div>
-                            <label htmlFor="school" className="block text-sm font-medium text-gray-700">
-                                School Name (Optional)
-                            </label>
-                            <input
-                                id="school"
-                                name="school"
-                                type="text"
-                                value={formData.school}
-                                onChange={handleChange}
-                                className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
-                                placeholder="Sunshine Elementary"
-                            />
-                        </div>
-
-                        {/* Username */}
-                        <div>
-                            <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                                Username *
-                            </label>
-                            <input
-                                id="username"
-                                name="username"
-                                type="text"
-                                required
-                                value={formData.username}
-                                onChange={handleChange}
-                                className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
-                                placeholder="jane123"
-                            />
-                        </div>
-
-                        {/* Password */}
-                        <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                                Password *
-                            </label>
-                            <input
-                                id="password"
-                                name="password"
-                                type="password"
-                                required
-                                value={formData.password}
-                                onChange={handleChange}
-                                className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
-                                placeholder="••••••••"
-                            />
-                        </div>
-
-                        {/* Email (Optional) */}
-                        <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                                Email (Optional – for account recovery)
-                            </label>
-                            <input
-                                id="email"
-                                name="email"
-                                type="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-gray-900 placeholder:text-gray-500 bg-white"
-                                placeholder="parent@example.com"
-                            />
+                        {/* Account Info */}
+                        <div className="space-y-4">
+                            <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">Security</h3>
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div className="space-y-1">
+                                    <label className="text-sm font-bold text-slate-700 ml-1">Username</label>
+                                    <input name="username" type="text" required placeholder="Choose username" onChange={handleChange} className={inputClasses} />
+                                </div>
+                                <div className="space-y-1 relative">
+                                    <label className="text-sm font-bold text-slate-700 ml-1">Password</label>
+                                    <div className="relative">
+                                        <input 
+                                            name="password" 
+                                            type={showPassword ? "text" : "password"} 
+                                            required 
+                                            placeholder="Create password" 
+                                            onChange={handleChange} 
+                                            className={inputClasses} 
+                                        />
+                                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-600">
+                                            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <button
                             type="submit"
-                            className="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition"
+                            disabled={isLoading}
+                            className="w-full py-4 bg-blue-600 text-white text-lg font-black rounded-xl shadow-xl shadow-blue-200 hover:bg-blue-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-4"
                         >
-                            Create Account
+                            {isLoading ? <Loader2 className="animate-spin" /> : 'Create My Free Account'}
                         </button>
                     </form>
 
-                    <p className="mt-8 text-center text-sm text-gray-600">
-                        Already have an account?{' '}
-                        <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
-                            Log in here
-                        </Link>
+                    <p className="mt-8 text-center text-base text-slate-600 font-medium">
+                        Already have an account? <Link href="/login" className="font-black text-blue-600 hover:underline">Log in</Link>
                     </p>
                 </div>
             </div>
