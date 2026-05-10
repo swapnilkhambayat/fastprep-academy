@@ -25,32 +25,38 @@ export default function SignupPage() {
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
-        setErrorMsg('');
-        
-        const supabase = createClient();
-        const { error } = await supabase.auth.signUp({
-            email: formData.email || `${formData.username}@fastprep.temp`,
-            password: formData.password,
-            options: {
-                data: {
-                    parent_name: formData.parentName,
-                    student_name: formData.studentName,
-                    grade: parseInt(formData.grade),
-                    school: formData.school || null,
-                    username: formData.username,
-                },
-            },
-        });
+    e.preventDefault();
+    setIsLoading(true);
+    setErrorMsg('');
 
-        if (error) {
-            setErrorMsg(error.message);
-            setIsLoading(false);
-        } else {
-            window.location.href = '/login?message=Check your email to confirm';
-        }
-    };
+    const supabase = createClient();
+
+    const normalizedUsername = formData.username.trim().toLowerCase();
+    const providedEmail = formData.email.trim().toLowerCase();
+    const authEmail = providedEmail || `${normalizedUsername}@fastprep.temp`;
+
+    const { error } = await supabase.auth.signUp({
+        email: authEmail,
+        password: formData.password,
+        options: {
+            data: {
+                parent_name: formData.parentName.trim(),
+                student_name: formData.studentName.trim(),
+                grade: parseInt(formData.grade, 10),
+                school: formData.school.trim() || null,
+                username: normalizedUsername,
+                email: authEmail,
+            },
+        },
+    });
+
+    if (error) {
+        setErrorMsg(error.message);
+        setIsLoading(false);
+    } else {
+        window.location.href = '/login?message=Check your email to confirm';
+    }
+   };
 
     // Shared Tailwind class for inputs to ensure high visibility
     const inputClasses = "w-full px-4 py-3 rounded-xl border-2 border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all";

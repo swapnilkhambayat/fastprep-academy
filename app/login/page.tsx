@@ -7,7 +7,7 @@ import { Loader2 } from 'lucide-react';
 import { createClient } from 'app/lib/supabase/client';
 
 export default function LoginPage() {
-    const [email, setEmail] = useState('');
+    const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
@@ -18,10 +18,36 @@ export default function LoginPage() {
         setErrorMsg('');
 
         const supabase = createClient();
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const trimmedIdentifier = identifier.trim().toLowerCase();
+        const isEmail = trimmedIdentifier.includes('@');
+
+        let authEmail = trimmedIdentifier;
+
+        // If identifier is a username (no @), look up the auth email from profiles
+        if (!isEmail) {
+            const { data: profile, error: lookupError } = await supabase
+                .from('profiles')
+                .select('email')
+                .eq('username', trimmedIdentifier)
+                .single();
+
+            if (lookupError || !profile?.email) {
+                setErrorMsg('Username not found. Please check and try again.');
+                setIsLoading(false);
+                return;
+            }
+
+            authEmail = profile.email;
+        }
+
+        // Sign in with resolved email
+        const { error } = await supabase.auth.signInWithPassword({
+            email: authEmail,
+            password,
+        });
 
         if (error) {
-            setErrorMsg(error.message);
+            setErrorMsg('Invalid credentials. Please try again.');
             setIsLoading(false);
         } else {
             window.location.href = '/overview';
@@ -41,12 +67,8 @@ export default function LoginPage() {
                         priority
                         className="mx-auto"
                     />
-                    <h2 className="mt-6 text-3xl font-bold text-gray-900">
-                        Welcome back!
-                    </h2>
-                    <p className="mt-2 text-gray-600">
-                        Log in to continue practicing FAST exams
-                    </p>
+                    <h2 className="mt-6 text-3xl font-bold text-gray-900">Welcome back!</h2>
+                    <p className="mt-2 text-gray-600">Log in to continue practicing FAST exams</p>
                 </div>
 
                 {/* Login Form */}
@@ -59,17 +81,18 @@ export default function LoginPage() {
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                                Email address
+                            <label htmlFor="identifier" className="block text-sm font-medium text-gray-700">
+                                Email or Username
                             </label>
                             <input
-                                id="email"
-                                type="email"
+                                id="identifier"
+                                type="text"
                                 required
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                value={identifier}
+                                onChange={(e) => setIdentifier(e.target.value)}
                                 className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                                placeholder="student@example.com"
+                                placeholder="Email or username"
+                                autoComplete="username"
                             />
                         </div>
 
@@ -85,15 +108,17 @@ export default function LoginPage() {
                                 onChange={(e) => setPassword(e.target.value)}
                                 className="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                                 placeholder="••••••••"
+                                autoComplete="current-password"
                             />
                         </div>
 
                         <div className="flex items-center justify-between">
-                            <div className="text-sm">
-                                <Link href="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
-                                    Forgot your password?
-                                </Link>
-                            </div>
+                            <Link
+                                href="/forgot-password"
+                                className="text-sm font-medium text-blue-600 hover:text-blue-500"
+                            >
+                                Forgot your password?
+                            </Link>
                         </div>
 
                         <button
