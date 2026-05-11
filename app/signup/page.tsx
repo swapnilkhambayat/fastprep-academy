@@ -25,45 +25,45 @@ export default function SignupPage() {
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setErrorMsg('');
+        e.preventDefault();
+        setIsLoading(true);
+        setErrorMsg('');
 
-    const supabase = createClient();
+        const supabase = createClient();
 
-    const normalizedUsername = formData.username.trim().toLowerCase();
-    const providedEmail = formData.email.trim().toLowerCase();
-    const authEmail = providedEmail || `${normalizedUsername}@fastprep.temp`;
+        const normalizedUsername = formData.username.trim().toLowerCase();
+        const providedEmail = formData.email.trim().toLowerCase();
+        const authEmail = providedEmail || `${normalizedUsername}@fastprep.temp`;
 
-    const { error } = await supabase.auth.signUp({
-        email: authEmail,
-        password: formData.password,
-        options: {
-            data: {
-                parent_name: formData.parentName.trim(),
-                student_name: formData.studentName.trim(),
-                grade: parseInt(formData.grade, 10),
-                school: formData.school.trim() || null,
-                username: normalizedUsername,
-                email: authEmail,
+        const { error } = await supabase.auth.signUp({
+            email: authEmail,
+            password: formData.password,
+            options: {
+                data: {
+                    parent_name: formData.parentName.trim(),
+                    student_name: formData.studentName.trim(),
+                    grade: parseInt(formData.grade, 10),
+                    school: formData.school.trim() || null,
+                    username: normalizedUsername,
+                    email: authEmail,
+                },
             },
-        },
-    });
+        });
 
-    if (error) {
-        setErrorMsg(error.message);
-        setIsLoading(false);
-    } else {
+        if (error) {
+            setErrorMsg(error.message);
+            setIsLoading(false);
+            return;
+        }
+
         window.location.href = '/login?message=Check your email to confirm';
-    }
-   };
+    };
 
-    // Shared Tailwind class for inputs to ensure high visibility
-    const inputClasses = "w-full px-4 py-3 rounded-xl border-2 border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all";
+    const inputClasses =
+        "w-full px-4 py-3 rounded-xl border-2 border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none transition-all";
 
     return (
         <div className="min-h-screen bg-slate-100 flex flex-col items-center justify-center px-6 py-12">
-            {/* Back Button with higher contrast */}
             <Link href="/" className="fixed top-8 left-8 flex items-center gap-2 text-slate-700 hover:text-blue-700 transition font-bold text-sm">
                 <ArrowLeft size={18} /> Back to Home
             </Link>
@@ -84,7 +84,6 @@ export default function SignupPage() {
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="grid md:grid-cols-2 gap-8">
-                            {/* Parent Info */}
                             <div className="space-y-4">
                                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">Parent Info</h3>
                                 <div className="space-y-1">
@@ -97,7 +96,6 @@ export default function SignupPage() {
                                 </div>
                             </div>
 
-                            {/* Student Info */}
                             <div className="space-y-4">
                                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">Student Info</h3>
                                 <div className="space-y-1">
@@ -116,7 +114,6 @@ export default function SignupPage() {
 
                         <div className="h-px bg-slate-200 my-4" />
 
-                        {/* Account Info */}
                         <div className="space-y-4">
                             <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">Security</h3>
                             <div className="grid md:grid-cols-2 gap-6">
@@ -127,13 +124,13 @@ export default function SignupPage() {
                                 <div className="space-y-1 relative">
                                     <label className="text-sm font-bold text-slate-700 ml-1">Password</label>
                                     <div className="relative">
-                                        <input 
-                                            name="password" 
-                                            type={showPassword ? "text" : "password"} 
-                                            required 
-                                            placeholder="Create password" 
-                                            onChange={handleChange} 
-                                            className={inputClasses} 
+                                        <input
+                                            name="password"
+                                            type={showPassword ? "text" : "password"}
+                                            required
+                                            placeholder="Create password"
+                                            onChange={handleChange}
+                                            className={inputClasses}
                                         />
                                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-600">
                                             {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
